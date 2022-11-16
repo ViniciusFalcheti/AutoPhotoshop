@@ -326,7 +326,7 @@ def criaConfrontos(jogos):
         if(dataJogo == ""):
             text_of_Local.contents = local
         else:
-            text_of_Local.contents = f"{horarioJogo} {localJogo} {dataJogo}"
+            text_of_Local.contents = f"{localJogo} {dataJogo} {horarioJogo}"
         nt1 = nt1.get_attribute("title")
         nt2 = nt2.get_attribute("title")
         # print(f"{nt1} {p1} x {p2} {nt2}")
@@ -457,13 +457,13 @@ def mudaCor1():
         layerPos4 = doc.ArtLayers[f"POS4"]
         layerPos4.textItem.color = textColor2
         layerPos5 = doc.ArtLayers[f"POS5"]
-        layerPos5.textItem.color = textColor3
+        layerPos5.textItem.color = textColor2
         layerPos6 = doc.ArtLayers[f"POS6"]
-        layerPos6.textItem.color = textColor3
+        layerPos6.textItem.color = textColor2
         layerPos7 = doc.ArtLayers[f"POS7"]
-        layerPos7.textItem.color = textColor1
+        layerPos7.textItem.color = textColor3
         layerPos8 = doc.ArtLayers[f"POS8"]
-        layerPos8.textItem.color = textColor1
+        layerPos8.textItem.color = textColor3
     elif(rodada == 'BRASILEIRÃO SÉRIE B'):
         layerPos1 = doc.ArtLayers[f"POS1"]
         layerPos1.textItem.color = textColor2
@@ -613,7 +613,7 @@ navegador.get("https://ge.globo.com/futebol/brasileirao-serie-a/")
 #     proximaRodada = navegador.find_element(By.XPATH, '//*[@id="classificacao__wrapper"]/section/nav/span[3]')
 # else:
 #     proximaRodada = navegador.find_element(By.XPATH, '//*[@id="classificacao__wrapper"]/nav/span[3]')
-# navegador.execute_script('arguments[0].click();', proximaRodada)          
+# navegador.execute_script('arguments[0].click();', proximaRodada)
 
 # if(exists(navegador, '//*[@id="classificacao__wrapper"]/nav/span[1]')):
 #     rodadaAnterior = navegador.find_element(By.XPATH, '//*[@id="classificacao__wrapper"]/nav/span[1]')

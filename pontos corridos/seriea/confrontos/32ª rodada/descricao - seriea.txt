@@ -1,6 +1,5 @@
 Palpites 32ª rodada Campeonato Brasileiro Série A 2022
 
-Goiás x Corinthians
 América-MG x Fortaleza
 Flamengo x Atlético-MG
 Palmeiras x São Paulo
@@ -10,3 +9,4 @@ Juventude x Atlético-GO
 Avaí x Fluminense
 Athletico-PR x Coritiba
 Bragantino x Santos
+Goiás x Corinthians

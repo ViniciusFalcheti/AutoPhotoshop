@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 from numpy import False_
 from sqlalchemy import null
 import win32com.client
@@ -14,12 +15,14 @@ def exists(navegador, elem):
     except NoSuchElementException:
         return False
 
-def saveJpg(jpg = f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/", the = False):
+def saveJpg(doc, jpg = f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/", the = False):
     options = win32com.client.Dispatch("Photoshop.ExportOptionsSaveForWeb")
 
     options.Format = 6
     options.Quality = 100
 
+    print(f"{campeonato.lower()}")
+    print(jpg)
     jpgfile = jpg + f"-{campeonato.lower()}.jpg"
     if(the == True):
         jpgfile = jpg + f"-{campeonato.lower()}-the.jpg" 
@@ -36,7 +39,7 @@ def tiraLogo(jpg):
     layerLogo.Visible = False
     layerFundo.Visible = False
 
-    saveJpg(jpg, True)
+    saveJpg(doc, jpg, True)
 
 def nomeTimesConfrontos(nt1, nt2):
         if(nt1 == "República Tcheca"):
@@ -95,7 +98,60 @@ def colocaLogo():
     # layerLogo.Visible = True
     layerFundo.Visible = True
 
+def arteConfronto(rodada, campeonato, nt1, nt2, resTimeCasa, resTimeFora, horarioJogo, localJogo, dataJogo, fase ,grupo, ordem):
+    if(resTimeCasa != NULL):
+        psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\arte-jogo-resultado.psd")
+        doc2 = psApp.Application.ActiveDocument
+        timeCasaRes = doc2.layerSets["RESULTADO"].ArtLayers[f"RESTIMECASA"]
+        timeForaRes = doc2.layerSets["RESULTADO"].ArtLayers[f"RESTIMEFORA"]
+
+        resTimeCasaLayer = timeCasaRes.TextItem
+        resTimeForaLayer = timeForaRes.TextItem
+
+        resTimeCasaLayer.contents = f"{resTimeCasa}"
+        resTimeForaLayer.contents = f"{resTimeFora}"
+    else:
+        psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\arte-jogo.psd")
+        doc2 = psApp.Application.ActiveDocument
+    
+    logoCampeonato = doc2.layerSets["CAMPEONATO"].ArtLayers[f"{campeonato.upper()}"]
+    logoCampeonato.Visible = True
+
+    print(campeonato)
+
+    faseCamada = doc2.layerSets["TITULO"].ArtLayers[f"FASE"]
+    rodadaCamada = doc2.layerSets["TITULO"].ArtLayers[f"RODADA"]
+
+    faseLayer = faseCamada.TextItem
+    rodadaLayer = rodadaCamada.TextItem
+
+    faseLayer.contents = f"{fase}"
+    rodadaLayer.contents = f"{grupo} - {rodada}"
+
+    emblemaTime1 = doc2.layerSets["EMBLEMAS"].LayerSets[f"{campeonato.upper()}"].layerSets["CASA"].ArtLayers[f"{nt1.upper()}"]
+    emblemaTime2 = doc2.layerSets["EMBLEMAS"].layerSets[f"{campeonato.upper()}"].layerSets["FORA"].ArtLayers[f"{nt2.upper()}"]
+
+    emblemaTime1.Visible = True
+    emblemaTime2.Visible = True
+
+    local = doc2.layerSets["LOCAL"].ArtLayers[f"LOCAL"]
+    horario = doc2.layerSets["LOCAL"].ArtLayers[f"HORARIO"]
+
+    localLayer = local.TextItem
+    horarioLayer = horario.TextItem
+
+    localLayer.contents = f"{localJogo}"
+    horarioLayer.contents = f"{dataJogo} ÀS {horarioJogo}"
+                                               
+    print(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/confrontos/{rodada.lower()}/{grupo}- {nt1}x{nt2}")
+    print(f"rodada: {rodada}")
+    saveJpg(doc2, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/confrontos/{rodada.lower()}/{grupo}- {nt1}x{nt2}")
+
+    doc2.Close(2)
+
 def criaConfrontos(qtdJogos, iniGrupos, fimGrupos):
+    fase = navegador.find_element(By.XPATH, '//*[@id="classificacao__wrapper"]/nav/span[2]').text
+
     layerCampeonato = doc.ArtLayers["CAMPEONATO"]
     text_of_layerCampeonato = layerCampeonato.TextItem
     text_of_layerCampeonato.contents = f"{campeonato}"
@@ -114,6 +170,19 @@ def criaConfrontos(qtdJogos, iniGrupos, fimGrupos):
         os.mkdir(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}")
     except OSError:
         pass
+
+    try:
+        os.mkdir(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/confrontos")
+    except OSError:
+        pass
+
+    try:
+        os.mkdir(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/confrontos/{rodada.lower()}")
+    except OSError:
+        pass
+
+    arquivo = open(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/confrontos/{rodada.lower()}/descricao - {campeonato}.txt", 'w')
+    texto = [f"Palpites {rodada.lower()} {campeonato.capitalize()}\n\n"]
 
     # print(navegador.find_element(By.XPATH, '//*[@id="classificacao__wrapper"]/section/ul/li[10]/div/div/div/div[1]/span[1]').text)
     for j in range(iniGrupos, fimGrupos):
@@ -139,13 +208,17 @@ def criaConfrontos(qtdJogos, iniGrupos, fimGrupos):
                         nt2 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[2]/div[3]/span[1]')
                         p1 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[2]/div[2]/span[1]').text
                         p2 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[2]/div[2]/span[5]').text                                                                                                                                                                                                                                                        
-                        local = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[1]/span[1]').text + " " + navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[1]/span[2]').text + " " + navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[1]/span[3]').text
+                        dataJogo = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[1]/span[1]').text
+                        localJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[1]/span[2]').text
+                        horarioJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/a/div[1]/div[1]/span[3]').text
                     else:
                         nt1 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[1]/span[1]') 
                         nt2 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[3]/span[1]')
                         p1 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[2]/span[1]').text
                         p2 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[2]/span[5]').text                                                                                                                                                                                                                                                        
-                        local = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[1]').text + " " + navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[2]').text + " " + navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[3]').text
+                        dataJogo = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[1]').text
+                        localJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[2]').text
+                        horarioJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[3]').text
 
                     layerGols1 = doc.ArtLayers[f"GRUPO{j+1}RES{i+1}TIME1"]
                     layerGols2 = doc.ArtLayers[f"GRUPO{j+1}RES{i+1}TIME2"]
@@ -156,22 +229,24 @@ def criaConfrontos(qtdJogos, iniGrupos, fimGrupos):
                     text_of_Gols1.contents = p1
                     text_of_Gols2.contents = p2
                 else:
-                    p1 = 0
-                    p2 = 0
+                    p1 = NULL
+                    p2 = NULL
                     nt1 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[1]/span[1]') 
                     nt2 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[3]/span[1]')
-                    local = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[1]').text + " " + navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[2]').text + " " + navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[3]').text
+                    dataJogo = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[1]').text
+                    localJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[2]').text
+                    horarioJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[3]').text
                     layerGols1 = doc.ArtLayers[f"GRUPO{j+1}RES{i+1}TIME1"]
                     layerGols2 = doc.ArtLayers[f"GRUPO{j+1}RES{i+1}TIME2"]
                     layerGols1.Visible = False
                     layerGols2.Visible = False
                 
             else:
-                p1 = 0
-                p2 = 0
+                p1 = NULL
+                p2 = NULL
                 nt1 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[1]/span[1]')   
                 nt2 = navegador.find_element(By.XPATH, f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[2]/div[3]/span[1]')
-                local = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[2]').text
+                localJogo = navegador.find_element_by_xpath(f'//*[@id="classificacao__wrapper"]/article[{j+1}]/section[2]/ul/li[{i+1}]/div/div/div/div[1]/span[2]').text
                 layerGols1 = doc.ArtLayers[f"GRUPO{j+1}RES{i+1}TIME1"]
                 layerGols2 = doc.ArtLayers[f"GRUPO{j+1}RES{i+1}TIME2"]
                 layerGols1.Visible = False
@@ -179,13 +254,19 @@ def criaConfrontos(qtdJogos, iniGrupos, fimGrupos):
             
             layerLocal = doc.ArtLayers[f"GRUPO{j+1}LOCAL{i+1}"]
             text_of_Local = layerLocal.TextItem
-            text_of_Local.contents = local
+            
+            if(dataJogo == ""):
+                text_of_Local.contents = localJogo
+            else:
+                text_of_Local.contents = f"{localJogo} {dataJogo} {horarioJogo}"
             nt1 = nt1.get_attribute("title")
             nt2 = nt2.get_attribute("title")
             
             nt1, nt2 = nomeTimesConfrontos(nt1, nt2)
                 
             print(f"{nt1} {p1} x {p2} {nt2}")
+
+            texto.append(f"{nt1} x {nt2}\n")
 
             layerTime1 = doc.ArtLayers[f"GRUPO{j+1}JOGO{i+1}TIME1"]
             layerTime2 = doc.ArtLayers[f"GRUPO{j+1}JOGO{i+1}TIME2"]
@@ -195,6 +276,13 @@ def criaConfrontos(qtdJogos, iniGrupos, fimGrupos):
             
             text_of_Time1.contents = nt1
             text_of_Time2.contents = nt2
+
+            if (campeonato == "COPA DO MUNDO"):
+
+                grupo = doc.ArtLayers[f"GRUPO{j+1}"]
+
+                print(f"fase: {fase} - grupo: {grupo.TextItem.contents}")
+                arteConfronto(rodada, campeonato, nt1, nt2, p1, p2,  horarioJogo, localJogo, dataJogo, fase, grupo.TextItem.contents, j+1)
     colocaLogo()
 
 def criaClass(navegador, iniGrupos, fimGrupos, qtdTimes):
@@ -294,10 +382,10 @@ options = webdriver.ChromeOptions()
 # options.binary_location = "C:\\Program Files\\Google\\Chrome Beta\\Application\\chrome"
 options.add_argument("--headless")
 navegador = webdriver.Chrome(options=options)
-# navegador.get("https://ge.globo.com/futebol/copa-do-mundo/2022/")
+navegador.get("https://ge.globo.com/futebol/copa-do-mundo/2022/")
 # navegador.get("https://ge.globo.com/futebol/futebol-internacional/liga-dos-campeoes/")
 # navegador.get("https://ge.globo.com/futebol/futebol-internacional/liga-das-nacoes/")
-navegador.get("https://ge.globo.com/futebol/futebol-internacional/liga-europa/")
+# navegador.get("https://ge.globo.com/futebol/futebol-internacional/liga-europa/")
 
 # time.sleep(15)
 
@@ -356,74 +444,79 @@ psApp = win32com.client.Dispatch("Photoshop.Application")
 campeonato = navegador.find_element(By.XPATH,'//*[@id="header-produto"]/div[2]/div/div/h1/div/a').text
 print(campeonato)
 
+fase = navegador.find_element(By.XPATH, '//*[@id="classificacao__wrapper"]/nav/span[2]').text
+
 if(campeonato == "COPA DO MUNDO DA FIFA™"):
     campeonato = "COPA DO MUNDO"
 
-psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\resultados-grupos-parte1.psd")
+print(f"{campeonato} {fase}")
 
-doc = psApp.Application.ActiveDocument
-
-if (campeonato == "LIGA DAS NAÇÕES"):
-    criaConfrontos(2,0,4)
-
-    saveJpg(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados")
-
-    tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados")
-else:
-    criaConfrontos(2,0,4)
-
-    saveJpg(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte1")
-
-    tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte1")
-
-    closePSD(doc)
-
-    psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\resultados-grupos-parte2.psd")
+if(fase == "FASE DE GRUPOS"):
+    psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\resultados-grupos-parte1.psd")
 
     doc = psApp.Application.ActiveDocument
 
-    criaConfrontos(2,4,8)
+    if (campeonato == "LIGA DAS NAÇÕES"):
+        criaConfrontos(2,0,4)
 
-    saveJpg(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte2")
+        saveJpg(doc, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados")
 
-    tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte2")
+        tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados")
+    else:
+        criaConfrontos(2,0,4)
 
-closePSD(doc)
+        saveJpg(doc, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte1")
 
-psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\tabela-grupos-parte1.psd")
-doc = psApp.Application.ActiveDocument
+        tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte1")
 
-if (campeonato == "LIGA DAS NAÇÕES"):
-    criaClass(navegador, 0, 4, 4)
-    colocaLogo()
+        closePSD(doc)
 
-    mudaCor()
+        psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\resultados-grupos-parte2.psd")
 
-    saveJpg(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos")
-    tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos")
+        doc = psApp.Application.ActiveDocument
 
-else: 
+        criaConfrontos(2,4,8)
 
-    criaClass(navegador, 0, 4, 4)
-    colocaLogo()
+        saveJpg(doc, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte2")
 
-    mudaCor()
-
-    saveJpg(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte1")
-    tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte1")
+        tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/resultados-parte2")
 
     closePSD(doc)
 
-    psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\tabela-grupos-parte2.psd")
+    psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\tabela-grupos-parte1.psd")
     doc = psApp.Application.ActiveDocument
 
-    criaClass(navegador, 4, 8, 4)
-    colocaLogo()
+    if (campeonato == "LIGA DAS NAÇÕES"):
+        criaClass(navegador, 0, 4, 4)
+        colocaLogo()
 
-    print(campeonato)
-    saveJpg(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte2")
-    tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte2")
+        mudaCor()
 
-closePSD(doc)
+        saveJpg(doc, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos")
+        tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos")
+
+    else: 
+
+        criaClass(navegador, 0, 4, 4)
+        colocaLogo()
+
+        mudaCor()
+
+        saveJpg(doc, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte1")
+        tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte1")
+
+        closePSD(doc)
+
+        psApp.Open(r"F:\OneDrive - OPIC Telecom\Área de Trabalho\auto\8grupos\tabela-grupos-parte2.psd")
+        doc = psApp.Application.ActiveDocument
+
+        criaClass(navegador, 4, 8, 4)
+        colocaLogo()
+
+        print(campeonato)
+        saveJpg(doc, f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte2")
+        tiraLogo(f"F:/OneDrive - OPIC Telecom/Área de Trabalho/auto/8grupos/{campeonato}/tabela-grupos-parte2")
+
+    closePSD(doc)
 
 navegador.close()
